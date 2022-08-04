@@ -1,13 +1,19 @@
-
-const { request } = require("express");
-const { response } = require("express");
 const express = require("express");
 const app = express();
+const cors = require('cors')
 const PORT = 5001
+
+const MongoClient = require('mongodb').MongoClient
+
+
+app.use(cors())
 app.use(express.json())
+
+const connectionString = 'mongodb+srv://livtv1:Power1tv@cluster1.nzkzfyp.mongodb.net/?retryWrites=true&w=majority'
 
 
 const shows = {
+
     "p valley":{
         "Premise": "P-Valley is an American drama television series created by Katori Hall. The series is an adaptation of Hall's play, Pussy Valley, and follows several people who work at a strip club in the Mississippi Delta. It stars Brandee Evans, Nicco Annan, and Elarica Johnson.",
         "network": 'STARZ',
@@ -31,17 +37,30 @@ const shows = {
     }
 }
 
-//app.use(express.json())
-app.get('/', (request, response)=>{
-    response.sendFile(__dirname + "/index.html")
-})
+MongoClient.connect(connectionString)
+    .then(client => {
+        console.log('it has worked, connected to tv show database')
+        const db = client.db('shows')
+        const infoCollection = db.collection('listOfShows')
 
-app.get('/api/:showName', (request, response)=>{
-    const showName = request.params.showName.toLowerCase()
-    if(shows[showName]){
-        response.json(shows[showName])
-    }else{response.json(['unknown'])}
+    app.get('/', (request, response)=>{
+    response.sendFile(__dirname + "/index.html")
+    })
+
+    app.get('/api/:showName', (request, response)=>{
+        const showsList = request.params.showName.toLowerCase()
+            infoCollection.find({name: showsList}).toArray()
+         .then(results => {
+            console.log(results)
+            response.json(results[0])
+        })
+        .catch(error => console.error(error))
+    })
+
 })
+.catch(error => console.error(error))
+
+
 
 
 
